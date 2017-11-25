@@ -40,69 +40,60 @@ token_list = ['PAREN_O', 'PAREN_C', 'DO', 'DO_AFTER',
               'RIGHT', 'LEFT', 'PRINT', 'LOOP', 'FUNC', 'ID', 'NUMBER'
              ]
 
+no_func = lambda x: x
 
 def parse(tokens):
     parser = ox.make_parser([
+        ('func : PAREN_O DO_AFTER args PAREN_O args PAREN_C PAREN_C', do_after),
+        ('func : PAREN_O DO_BEFORE args PAREN_O args PAREN_C PAREN_C', do_before),
         ('func : PAREN_O name args PAREN_C', lambda x, y, z, w: (y, z)),
-        ('name : DO', lambda x: x),
-        ('name : ADD', lambda x: x),
-        ('name : SUB', lambda x: x),
-        ('name : LOOP', lambda x: x),
+        ('name : DO', no_func),
+        ('name : ADD', no_func),
+        ('name : SUB', no_func),
+        ('name : LOOP', no_func),
         ('args : args arg', lambda x, y: x + [y]),
         ('args : arg', lambda x: [x]),
-        ('arg : func', lambda x: x),
-        ('arg : procedure', lambda x: x),
-        ('arg : NUMBER', lambda x: x),
-        ('procedure : PRINT', lambda x: x),
-        ('procedure : INC', lambda x: x),
-        ('procedure : DEC', lambda x: x),
-        ('procedure : READ', lambda x: x),
-        ('procedure : LEFT', lambda x: x),
-        ('procedure : RIGHT', lambda x: x),
+        ('arg : func', no_func),
+        ('arg : procedure', no_func),
+        ('arg : NUMBER', no_func),
+        ('procedure : PRINT', no_func),
+        ('procedure : INC', no_func),
+        ('procedure : DEC', no_func),
+        ('procedure : READ', no_func),
+        ('procedure : LEFT', no_func),
+        ('procedure : RIGHT', no_func),
 
     ], token_list)
 
     return parser(tokens)
 
 
-def arguments(args1, args2):
-    if type(args2) is list:
-        return args1 + args2
-    else:
-        args1.append(args2)
-        return args1
-
 
 def do_before(p_o1, d_b, args1, p_o2, args2, p_c1, p_c2):
     result = []
 
     for i in args2:
-        for j in args1:
-            result.append(j)
+        partial_result = args1[:]
+        partial_result.append(i)
 
-        result.append(i)
+        element = ('do', partial_result)
+        result.append(element)
 
-    return ('Do', result)
+    return ('do', result)
 
 
 def do_after(p_o1, d_a, args1, p_o2, args2, p_c1, p_c2):
     result = []
 
     for i in args2:
-        result.append(i)
-        for j in args1:
-            result.append(j)
+        partial_result = []
+        partial_result.append(i)
+        partial_result += args1
 
-    return ('Do', result)
+        element = ('do', partial_result)
+        result.append(element)
 
-
-def validate_arg(arg):
-    result = []
-    if arg is not None:
-        result.append(arg)
-
-    return result
-
+    return ('do', result)
 
 
 if __name__ == '__main__':
