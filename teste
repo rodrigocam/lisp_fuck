@@ -1,6 +1,0 @@
-(do inc inc (loop (add 5)) print)
-
-
-;(func args)
-;args = procedure
-;args = func
