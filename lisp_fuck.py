@@ -1,12 +1,13 @@
-import ox
 import argparse
+import ox
 from collections import namedtuple
 
-parser = argparse.ArgumentParser()
-parser.add_argument("filename", help="Lispfuck filename")
+arg_parser = argparse.ArgumentParser()
+arg_parser.add_argument("filename", help="Lispfuck filename")
 
-args = parser.parse_args()
+args = arg_parser.parse_args()
 INPUT_FILENAME = args.filename
+
 
 def tokenize(code):
     lexer = ox.make_lexer([
@@ -19,47 +20,54 @@ def tokenize(code):
         ('INC', r'inc'),
         ('DEC', r'dec'),
         ('ADD', r'add'),
+        ('SUB', r'sub'),
         ('RIGHT', r'right'),
         ('LEFT', r'left'),
         ('PRINT', r'print'),
         ('LOOP', r'loop'),
-        ('FUNC', r'def \s([a-zA-Z]*)'),
-        ('PARAM', r'[a-zA-Z]{1}'),
+        # ('FUNC', r'def \s([a-zA-Z]*)'),
+        # ('PARAM', r'[a-zA-Z]'),
         ('COMMENT', r';.*'),
         ('NEWLINE', r'\n'),
-        ('SPACE', r'\s+')
+        ('SPACE', r'\s+'),
+        ('NUMBER', r'[0-9]+')
     ])
     return lexer(code)
 
 
 token_list = ['PAREN_O', 'PAREN_C', 'DO', 'DO_AFTER',
-                 'DO_BEFORE', 'READ', 'INC', 'DEC', 'ADD',
-                 'RIGHT', 'LEFT', 'PRINT', 'LOOP', 'FUNC', 'ID'
-                ]
+              'DO_BEFORE', 'READ', 'INC', 'DEC', 'ADD', 'SUB',
+              'RIGHT', 'LEFT', 'PRINT', 'LOOP', 'FUNC', 'ID', 'NUMBER'
+             ]
+
 
 def parse(tokens):
     parser = ox.make_parser([
-        ('def : do FUNC PAREN_O args PAREN_C PAREN_O args PAREN_C', test),
+        # ('def : do FUNC PAREN_O args PAREN_C PAREN_O args PAREN_C', test),
         ('do : do arg', lambda d, a: d),
-        ('do : PAREN_O DO args PAREN_C', lambda p_o, do, args, p_c: ('DO', args)),
+        ('do : PAREN_O command args PAREN_C', lambda p_o, command, args, p_c: (command, args)),
         ('do : PAREN_O DO_AFTER args PAREN_O args PAREN_C PAREN_C', do_after),
         ('do : PAREN_O DO_BEFORE args PAREN_O args PAREN_C PAREN_C', do_before),
-        ('args : loop', lambda x:x),
-        ('loop : PAREN_O LOOP args PAREN_C', lambda p_o, loop, args, p_c: ('Loop', args)),
+        #('args : LOOP', lambda x: x),
         ('args : args args', arguments),
         ('args : args arg', arguments),
         ('args : arg', validate_arg),
-        ('arg : READ', lambda x:x),
-        ('arg : INC', lambda x:x),
-        ('arg : DEC', lambda x:x),
-        ('arg : ADD', lambda x:x),
-        ('arg : RIGHT', lambda x:x),
-        ('arg : LEFT', lambda x:x),
-        ('arg : PRINT', lambda x:x),
+        ('arg : READ', lambda x: x),
+        ('arg : NUMBER', lambda x: x),
+        ('arg : INC', lambda x: x),
+        ('arg : DEC', lambda x: x),
+        ('arg : RIGHT', lambda x: x),
+        ('arg : LEFT', lambda x: x),
+        ('arg : PRINT', lambda x: x),
+        ('command : DO', lambda x: x),
+        ('command : ADD', lambda x: x),
+        ('command : LOOP', lambda x: x),
+        ('command : SUB', lambda x: x)
 
     ], token_list)
 
     return parser(tokens)
+
 
 def arguments(args1, args2):
     if type(args2) is list:
